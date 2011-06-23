@@ -18,6 +18,7 @@ from errors import IOSError
 import posixpath
 from constants import cloudfiles_api_timeout
 from functools import wraps
+import threading
 
 __all__ = ['CloudFilesFS']
 
@@ -138,8 +139,18 @@ class ListDirCache(object):
     def __init__(self, cffs):
         self.cffs = cffs
         self.path = None
-        self.cache = None
+        self._local = threading.local()
         self.when = time.time()
+
+    @property
+    def cache(self):
+        '''The cache (stored in a thread local variable)'''
+        return getattr(self._local, 'cache')
+
+    @cache.setter
+    def cache(self, value):
+        '''Set the thread local cache'''
+        setattr(self._local, 'cache', value)
 
     def flush(self):
         '''Flush the listdir cache'''
